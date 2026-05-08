@@ -1,0 +1,40 @@
+# 这里只负责“运行时绑定”：
+# 每个 reviewer / editor 槽位默认使用哪个 provider profile、哪个 model。
+# 角色本身的职责、语气、focus areas 在 roles.yaml 里定义。
+# 如果你只是第一次试跑，保留 mock_local 就行。
+# 如果你已经配好了真实模型，把下面的 profile / model 改成你自己的组合。
+
+default_mode: backend
+
+generalists:
+  - id: committee_reviewer_a
+    profile: mock_local
+    model: mock-generalist-a
+  - id: committee_reviewer_b
+    profile: mock_local
+    model: mock-generalist-b
+  - id: committee_reviewer_c
+    profile: mock_local
+    model: mock-generalist-c
+
+specialists:
+  - id: specialist_theoretical
+    profile: mock_local
+    model: mock-specialist-theoretical
+  - id: specialist_empirical
+    profile: mock_local
+    model: mock-specialist-empirical
+  - id: specialist_clarity
+    profile: mock_local
+    model: mock-specialist-clarity
+  - id: specialist_significance
+    profile: mock_local
+    model: mock-specialist-significance
+  - id: specialist_structure
+    profile: mock_local
+    model: mock-specialist-structure
+
+editor:
+  id: meta_editor
+  profile: mock_local
+  model: mock-editor-v1

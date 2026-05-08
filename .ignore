@@ -1,0 +1,12 @@
+.basetemp/
+basetemp_plain/
+pytest-cache-files-*/
+.pytest_cache/
+.tmp/
+pytest-tmp-clean/
+review_outputs/
+data/
+tmp-*/
+skill-smoke/
+src/fusion_reviewer.egg-info/
+__pycache__/

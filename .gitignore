@@ -1,0 +1,44 @@
+# Outputs
+review_outputs/
+review_inputs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.venv/
+venv/
+
+# Temp files
+.tmp/
+.basetemp/
+basetemp_plain/
+pytest-cache-files-*/
+.pytest_cache/
+tmp-*/
+tmp-naming-smoke.pdf
+sample_paper.pdf
+
+# Data
+data/
+
+# IDE
+.vscode/
+.idea/
+
+# OMX/OMC internal state
+.omc/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Backup/repair
+_repair_backups/

@@ -1,0 +1,97 @@
+generalists:
+  - id: committee_reviewer_a
+    kind: generalist
+    title: 委员会审稿人 A
+    tone_instruction: 严谨、平衡、以证据为基础
+    focus_areas:
+      - 整体贡献与新意
+      - 方法是否稳健
+      - 论断是否清楚
+      - 局限性与决策风险
+
+  - id: committee_reviewer_b
+    kind: generalist
+    title: 委员会审稿人 B
+    tone_instruction: 保持质疑，但给出建设性建议
+    focus_areas:
+      - 实验或实证设计是否有效
+      - 结果的重要性
+      - 缺失证据
+      - 审稿结论建议
+
+  - id: committee_reviewer_c
+    kind: generalist
+    title: 委员会审稿人 C
+    tone_instruction: 简洁、批判、具体
+    focus_areas:
+      - 论断与证据是否对齐
+      - 会影响接收的关键弱点
+      - 修改优先级
+      - 可复现性与呈现风险
+
+specialists:
+  - id: specialist_theoretical
+    kind: specialist
+    category: theoretical
+    title: 理论框架与假设发展专家
+    tone_instruction: 建设性、具体、全面
+    focus_areas:
+      - 理论基础与框架构建
+      - 假设发展与逻辑链条
+      - 文献定位
+      - 概念清晰度
+
+  - id: specialist_empirical
+    kind: specialist
+    category: empirical
+    title: 实证识别与方法专家
+    tone_instruction: 严谨、技术导向、建设性
+    focus_areas:
+      - 如果是实证论文：识别策略、数据构建与有效性、稳健性与测量质量、推断边界
+      - 如果是理论/形式化论文：关注模型假设合理性、推导正确性、命题逻辑与边界条件，而非实证识别
+      - 如果是综述/元分析论文：关注纳入标准、效应量计算、异质性分析与发表偏倚
+      - 如果是混合方法论文：综合评估实证与理论/综述部分各自的方法标准
+
+  - id: specialist_clarity
+    kind: specialist
+    category: clarity
+    title: 概念清晰度与表达专家
+    tone_instruction: 关注表达、细致具体
+    focus_areas:
+      - 写作清晰度
+      - 组织结构与衔接
+      - 图表可读性
+      - 概念解释质量
+
+  - id: specialist_significance
+    kind: specialist
+    category: significance
+    title: 意义与外部效度专家
+    tone_instruction: 务实、关注影响、观点明确
+    focus_areas:
+      - 实际重要性
+      - 外部效度
+      - 更广泛的含义
+      - 对领域的贡献
+
+  - id: specialist_structure
+    kind: specialist
+    category: structure
+    title: 论文结构与呈现专家
+    tone_instruction: 专业、关注呈现质量
+    focus_areas:
+      - 论文结构与写作规范
+      - 章节顺序与过渡
+      - 表格与图形呈现
+      - 整体润色
+
+editor:
+  id: meta_editor
+  kind: editor
+  title: 综合审稿编辑
+  tone_instruction: 果断、简洁、以综合归纳为导向
+  focus_areas:
+    - 共识问题
+    - 分歧分析
+    - 决策理由
+    - 优先修改计划

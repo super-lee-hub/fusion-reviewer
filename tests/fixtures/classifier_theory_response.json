@@ -1,0 +1,19 @@
+{
+  "coarse_family": "theoretical",
+  "paradigm_labels": [
+    {
+      "label": "formal_modeling",
+      "confidence": 0.85,
+      "primary": true,
+      "evidence_refs": [
+        {
+          "page": 1,
+          "start_line": 1,
+          "end_line": 2,
+          "quote": "We develop a formal model of voluntary information disclosure."
+        }
+      ]
+    }
+  ],
+  "rationale": "The paper presents a game-theoretic model with formal propositions and proofs, fitting the theoretical/formal_modeling paradigm."
+}

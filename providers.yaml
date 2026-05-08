@@ -1,0 +1,61 @@
+profiles:
+  # 本地 mock provider。
+  # 适合第一次试跑、离线联调、验证 artifacts 是否完整。
+  # 不需要任何 API key。
+  mock_local:
+    type: native
+    vendor: mock
+    base_url: ""
+    api_key_env: ""
+    model: mock-reviewer-v1
+    supports_tools: false
+    enabled: true
+
+  # OpenAI 默认 profile。
+  # 读取 OPENAI_API_KEY，可选读取 OPENAI_BASE_URL。
+  openai_default:
+    type: openai_compatible
+    base_url: "${OPENAI_BASE_URL}"
+    api_key_env: OPENAI_API_KEY
+    model: gpt-4o-mini
+    supports_tools: false
+    enabled: true
+
+  # AIHubMix 这类 OpenAI-compatible 聚合平台。
+  # 需要在 .env 里同时配置 AIHUBMIX_API_KEY 和 AIHUBMIX_BASE_URL。
+  aihubmix:
+    type: openai_compatible
+    base_url: "${AIHUBMIX_BASE_URL}"
+    api_key_env: AIHUBMIX_API_KEY
+    model: gpt-4o-mini
+    supports_tools: false
+    enabled: true
+
+  # SiliconFlow / 硅基流动这类 OpenAI-compatible 聚合平台。
+  siliconflow:
+    type: openai_compatible
+    base_url: "${SILICONFLOW_BASE_URL}"
+    api_key_env: SILICONFLOW_API_KEY
+    model: gpt-4o-mini
+    supports_tools: false
+    enabled: true
+
+  # Anthropic 原生 profile。
+  anthropic_native:
+    type: native
+    vendor: anthropic
+    base_url: ""
+    api_key_env: ANTHROPIC_API_KEY
+    model: claude-3.7-sonnet
+    supports_tools: false
+    enabled: true
+
+  # Google Gemini 原生 profile。
+  google_native:
+    type: native
+    vendor: google
+    base_url: ""
+    api_key_env: GOOGLE_API_KEY
+    model: gemini-2.5-pro
+    supports_tools: false
+    enabled: true

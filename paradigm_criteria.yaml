@@ -1,0 +1,169 @@
+paradigms:
+  - tag: formal_modeling
+    coarse_family: theoretical
+    appropriate_focus:
+      - 模型假设的合理性与完备性
+      - 数学推导的正确性
+      - 均衡分析与比较静态
+      - 命题/定理的证明逻辑
+      - 模型边界条件与适用范围
+    inappropriate_critique_patterns:
+      - 实证识别策略
+      - 数据构建与有效性
+      - 稳健性检验
+      - 测量质量
+      - 统计推断
+  - tag: conceptual_theory
+    coarse_family: theoretical
+    appropriate_focus:
+      - 概念定义的清晰度与一致性
+      - 理论构建的逻辑连贯性
+      - 假设发展是否合理
+      - 边界条件的明确性
+      - 对现有理论的贡献
+    inappropriate_critique_patterns:
+      - 实证识别策略
+      - 数据构建
+      - 量化测量
+      - 实验设计
+  - tag: game_theory
+    coarse_family: theoretical
+    appropriate_focus:
+      - 策略空间的设定合理性
+      - 均衡概念的选择与适用性
+      - 收益结构的假设依据
+      - 推导的严谨性
+      - 假设的稳健性分析
+    inappropriate_critique_patterns:
+      - 实证识别
+      - 数据收集方法
+      - 问卷设计
+      - 实验操控
+  - tag: mathematical_derivation
+    coarse_family: theoretical
+    appropriate_focus:
+      - 数学推导步骤的正确性
+      - 前置假设的明确性
+      - 推导结论的一般性
+      - 数学工具使用的恰当性
+    inappropriate_critique_patterns:
+      - 实验设计
+      - 样本选择
+      - 数据质量
+      - 实证测量
+  - tag: experiment
+    coarse_family: empirical
+    appropriate_focus:
+      - 识别策略与因果推断
+      - 随机化与统计功效
+      - 混淆因素控制
+      - 测量有效性
+      - 操纵检验与处理保真度
+      - 推断边界与外部效度
+    inappropriate_critique_patterns:
+      - 形式化模型推导
+      - 博弈均衡证明
+      - 纯数学定理证明
+  - tag: survey
+    coarse_family: empirical
+    appropriate_focus:
+      - 抽样框架与代表性
+      - 测量工具的构念效度
+      - 共同方法偏差控制
+      - 无应答偏差
+      - 数据收集程序
+    inappropriate_critique_patterns:
+      - 实验操控检验
+      - 随机化检验
+      - 模型推导正确性
+  - tag: secondary_data
+    coarse_family: empirical
+    appropriate_focus:
+      - 数据来源与质量
+      - 变量构造与测量的对应性
+      - 样本选择与代表性问题
+      - 模型设定与识别
+      - 稳健性与替代解释
+    inappropriate_critique_patterns:
+      - 实验设计
+      - 随机化程序
+      - 形式化模型证明
+  - tag: case_qualitative
+    coarse_family: empirical
+    appropriate_focus:
+      - 案例选择的合理性与典型性
+      - 数据三角验证
+      - 分析过程的透明度
+      - 理论饱和与归纳逻辑
+      - 替代解释的处理
+    inappropriate_critique_patterns:
+      - 统计显著性
+      - 大样本代表性
+      - 因果识别策略
+  - tag: simulation_calibration
+    coarse_family: empirical
+    appropriate_focus:
+      - 模型参数的校准依据
+      - 模拟设计的合理性
+      - 敏感性分析
+      - 校准目标的选择
+      - 模拟结果的稳健性
+    inappropriate_critique_patterns:
+      - 随机化实验设计
+      - 调查抽样
+      - 形式化证明
+  - tag: literature_review
+    coarse_family: review_synthesis
+    appropriate_focus:
+      - 文献覆盖的全面性
+      - 分类框架的合理性
+      - 综合方法是否系统
+      - 研究缺口的识别
+      - 对未来研究的指导
+    inappropriate_critique_patterns:
+      - 实证识别策略
+      - 模型推导
+      - 实验设计
+  - tag: meta_analysis
+    coarse_family: review_synthesis
+    appropriate_focus:
+      - 纳入标准与排除标准
+      - 效应量计算与汇总方法
+      - 异质性分析与调节变量
+      - 发表偏倚评估
+      - 敏感性分析
+    inappropriate_critique_patterns:
+      - 一手实验设计
+      - 原始数据收集
+      - 模型假设推导
+  - tag: systematic_review
+    coarse_family: review_synthesis
+    appropriate_focus:
+      - 检索策略的系统性
+      - 筛选过程的透明度
+      - 质量评估标准
+      - 证据综合方法
+      - 结论的可靠性
+    inappropriate_critique_patterns:
+      - 一手数据收集
+      - 实验操纵
+      - 数学推导
+  - tag: narrative_synthesis
+    coarse_family: review_synthesis
+    appropriate_focus:
+      - 叙事逻辑的连贯性
+      - 观点的整合深度
+      - 历史脉络的清晰度
+      - 批判性分析
+      - 未来方向的洞察
+    inappropriate_critique_patterns:
+      - 元分析统计
+      - 系统检索方法
+      - 实验设计
+
+fallback_focus:
+  - 研究方法是否适合论文的研究问题
+  - 论证逻辑是否自洽
+  - 核心论断是否有充分支撑
+  - 局限性是否被充分讨论
+  - 对领域的贡献是否清晰

@@ -1,0 +1,19 @@
+{
+  "coarse_family": "empirical",
+  "paradigm_labels": [
+    {
+      "label": "experiment",
+      "confidence": 0.90,
+      "primary": true,
+      "evidence_refs": [
+        {
+          "page": 1,
+          "start_line": 1,
+          "end_line": 2,
+          "quote": "We conduct a randomized field experiment with 2,400 employees."
+        }
+      ]
+    }
+  ],
+  "rationale": "The paper describes a randomized controlled trial with treatment/control groups, fitting the empirical/experiment paradigm."
+}

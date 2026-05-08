@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>fusion-reviewer</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    :root {
+      --bg: #f6efe4;
+      --card: #fffaf4;
+      --ink: #1f2933;
+      --muted: #6b7280;
+      --accent: #b45309;
+      --line: #ead8c2;
+    }
+    body { margin: 0; font-family: Georgia, "Times New Roman", serif; background: radial-gradient(circle at top, #fff7ed, var(--bg)); color: var(--ink); }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 48px 20px 72px; }
+    .hero { padding: 28px; border: 1px solid var(--line); background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,244,230,.95)); border-radius: 24px; box-shadow: 0 20px 50px rgba(75, 44, 12, 0.08); }
+    h1 { margin: 0 0 12px; font-size: 2.4rem; }
+    p { color: var(--muted); line-height: 1.6; }
+    form { margin-top: 28px; display: grid; gap: 16px; }
+    label { display: grid; gap: 8px; font-weight: 600; }
+    input, select, textarea, button { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); font: inherit; }
+    textarea { resize: vertical; min-height: 120px; }
+    button { background: var(--accent); color: white; border: 0; cursor: pointer; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 24px; }
+    .card { padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
+    code { background: rgba(180, 83, 9, 0.09); padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>fusion-reviewer</h1>
+      <p>上传论文后，系统会先做一次共享证据预处理，再进入 <code>backend</code> 模式或 <code>Codex skill</code> 模式的委员会审稿流程。PDF 会优先走 MinerU，高保真失败时再回退到本地结构化解析；Word 默认先转 PDF 再审。</p>
+      <form action="/ui/jobs" method="post" enctype="multipart/form-data">
+        <label>
+          论文文件
+          <input type="file" name="paper" accept=".pdf,.doc,.docx" required>
+        </label>
+        <label>
+          可选标题覆盖
+          <input type="text" name="title" placeholder="不填就使用文件名">
+        </label>
+        <label>
+          运行模式
+          <select name="mode">
+            <option value="backend">backend：直接跑完整委员会审稿</option>
+            <option value="codex">codex：只准备共享证据包，交给 Codex skill 拉起 8 个 subagent</option>
+          </select>
+        </label>
+        <label>
+          期刊风格 / 审稿要求（可选）
+          <textarea name="journal_text" rows="6" placeholder="可直接粘贴期刊定位、栏目范围、审稿标准、格式偏好、拒稿风险点等内容"></textarea>
+        </label>
+        <label>
+          期刊要求文件（可选）
+          <input type="file" name="journal_file" accept=".txt,.md,.docx">
+        </label>
+        <label>
+          Provider profile
+          <select name="provider_profile">
+            <option value="">使用默认 reviewer/editor 槽位配置</option>
+            {% for profile in profiles %}
+            <option value="{{ profile }}">{{ profile }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button type="submit">开始审稿</button>
+      </form>
+    </section>
+    <section class="grid">
+      <div class="card">
+        <h3>命令行</h3>
+        <p>使用 <code>fusion-review submit --paper paper.pdf</code> 跑 backend；加上 <code>--mode codex</code> 则只准备 Codex skill 需要的运行目录。</p>
+      </div>
+      <div class="card">
+        <h3>共享证据</h3>
+        <p>PDF、DOCX、DOC 都先走统一预处理层。优先 MinerU，其次本地结构化 fallback，最后才是纯文本兜底。</p>
+      </div>
+      <div class="card">
+        <h3>产物目录</h3>
+        <p>每次运行都会写入类似 <code>review_outputs/20260327-214500__论文名__短任务号</code> 这样的清晰目录，里面会有 evidence、8 份 reviewer 结果、concerns 表、meta review、final report 等文件。</p>
+      </div>
+    </section>
+    <section class="hero" style="margin-top: 28px;">
+      <h2 style="margin-top: 0;">最近任务</h2>
+      {% if recent_jobs %}
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:10px; border-bottom:1px solid var(--line);">标题</th>
+              <th style="text-align:left; padding:10px; border-bottom:1px solid var(--line);">源文件</th>
+              <th style="text-align:left; padding:10px; border-bottom:1px solid var(--line);">状态</th>
+              <th style="text-align:left; padding:10px; border-bottom:1px solid var(--line);">结果目录</th>
+              <th style="text-align:left; padding:10px; border-bottom:1px solid var(--line);">查看</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for job in recent_jobs %}
+            <tr>
+              <td style="padding:10px; border-bottom:1px solid var(--line);">{{ job.title }}</td>
+              <td style="padding:10px; border-bottom:1px solid var(--line);"><code>{{ job.source_name }}</code></td>
+              <td style="padding:10px; border-bottom:1px solid var(--line);"><code>{{ job.status }}</code></td>
+              <td style="padding:10px; border-bottom:1px solid var(--line);"><code>{{ job.run_label or job.id }}</code></td>
+              <td style="padding:10px; border-bottom:1px solid var(--line);"><a href="/ui/jobs/{{ job.id }}">打开</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p>还没有任务。先上传一篇论文试跑一次，后面这里会自动列出最近的审稿记录。</p>
+      {% endif %}
+    </section>
+  </div>
+</body>
+</html>

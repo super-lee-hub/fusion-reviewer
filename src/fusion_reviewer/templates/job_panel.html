@@ -1,0 +1,85 @@
+<div>
+  <h1>{{ job.title }}</h1>
+  <p>状态：<strong>{{ job.status }}</strong></p>
+  <p>{{ job.message }}</p>
+  {% if job.error %}
+  <p><strong>错误：</strong>{{ job.error }}</p>
+  {% endif %}
+  <p>任务 ID：<code>{{ job.id }}</code></p>
+  {% if job.run_label %}
+  <p>结果目录：<code>{{ job.run_label }}</code></p>
+  {% endif %}
+  <p>运行模式：<code>{{ job.mode }}</code></p>
+  <p>源文件：<code>{{ job.source_name }}</code>（{{ job.document_type }}）</p>
+  <p>期刊要求：<code>{{ job.journal_context_present }}</code>{% if job.journal_context_source %}（{{ job.journal_context_source }}）{% endif %}</p>
+  {% if job.layout_fidelity %}
+  <p>
+    提取保真度：<code>{{ job.layout_fidelity }}</code>
+    {% if job.extractor_used %}，解析器 <code>{{ job.extractor_used }}</code>{% endif %}
+    {% if job.conversion_used %}，转换 <code>{{ job.conversion_used }}</code>{% endif %}
+    {% if job.mineru_attempted is not none %}，MinerU 尝试=<code>{{ job.mineru_attempted }}</code>{% endif %}
+    {% if job.mineru_succeeded is not none %}，MinerU 成功=<code>{{ job.mineru_succeeded }}</code>{% endif %}
+  </p>
+  {% endif %}
+  {% if job.pdf_ready %}
+  <p><a href="/downloads/{{ job.id }}/final-report.pdf">下载最终 PDF 报告</a></p>
+  {% endif %}
+  {% if job.metadata.friendly_artifact_aliases %}
+  <h2>易读文件名</h2>
+  <ul>
+    {% for original, alias_path in job.metadata.friendly_artifact_aliases.items() %}
+    <li><code>{{ original }}</code> → <code>{{ alias_path }}</code></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <h2>Reviewer 输出</h2>
+  <ul>
+    {% for agent in job.agents %}
+    <li>
+      <strong>{{ agent.title }}</strong>（{{ agent.kind }}，{{ agent.status }}）
+      {% if agent.artifact_markdown %}
+      - <code>{{ agent.artifact_markdown }}</code>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% if result.meta_review %}
+  <h2>Meta Review</h2>
+  <pre style="white-space: pre-wrap;">{{ result.meta_review | tojson(indent=2) }}</pre>
+  {% endif %}
+  {% if result.final_summary %}
+  <h2>Final Summary</h2>
+  <pre style="white-space: pre-wrap;">{{ result.final_summary | tojson(indent=2) }}</pre>
+  {% endif %}
+  {% if result.concerns %}
+  <h2>Concerns Table</h2>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tr>
+      <th>标题</th>
+      <th>类别</th>
+      <th>严重性</th>
+      <th>提出者</th>
+      <th>共识状态</th>
+    </tr>
+    {% for concern in result.concerns %}
+    <tr>
+      <td>{{ concern.title }}</td>
+      <td>{{ concern.category }}</td>
+      <td>{{ concern.severity }}</td>
+      <td>{{ concern.raised_by | join(', ') }}</td>
+      <td>{{ concern.consensus_state }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+  {% if result.final_report_markdown %}
+  <h2>Final Markdown</h2>
+  <pre style="white-space: pre-wrap;">{{ result.final_report_markdown }}</pre>
+  {% endif %}
+  <h2>Artifacts</h2>
+  <ul>
+    {% for name, artifact in artifacts.artifacts.items() %}
+    <li><code>{{ name }}</code>（{{ artifact.size_bytes }} bytes）</li>
+    {% endfor %}
+  </ul>
+</div>
