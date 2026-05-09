@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Any, Literal
 from uuid import UUID, uuid4
 
-from deepreview.types import JobArtifacts, JobStatus, UsageSnapshot
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 
@@ -12,39 +12,46 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+# ---- local types (replaces deepreview.types imports) -------------------------
+
+class JobStatus(str, Enum):
+    queued = "queued"
+    pdf_parsing = "pdf_parsing"
+    agent_running = "agent_running"
+    final_report_persisting = "final_report_persisting"
+    pdf_exporting = "pdf_exporting"
+    completed = "completed"
+    failed = "failed"
+
+
+class UsageSnapshot(BaseModel):
+    requests: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+
+
+# ---- shared literals ---------------------------------------------------------
+
 Severity = Literal["low", "medium", "high", "critical"]
 ConsensusState = Literal["consensus", "disagreement", "single-source"]
 DecisionValue = Literal["accept", "minor_revision", "major_revision", "reject"]
 DocumentType = Literal["pdf", "docx", "doc"]
-RuntimeMode = Literal["backend", "codex"]
 LayoutFidelity = Literal["full", "degraded", "text_only"]
-ReviewSource = Literal["subagent", "local", "service", "unknown"]
+ReviewSource = Literal["subagent", "serial_local", "local", "unknown"]
+AgentHost = Literal["codex", "claude_code", "other", "unknown"]
 CoarseFamily = Literal["empirical", "theoretical", "mixed", "review_synthesis"]
+CommitteeMode = Literal["draft_only", "partial", "full"]
+EditorMode = Literal["present", "draft_only", "absent"]
+RevisionMode = Literal["none", "reviewer_assessments_only", "full_synthesis"]
+RevisionStatus = Literal["addressed", "partially_addressed", "not_addressed", "unclear"]
+FindingOrigin = Literal["original", "new_after_revision"]
+
+ARTIFACT_CONTRACT_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.0.0"
 
 
-class ParadigmLabel(BaseModel):
-    label: str
-    confidence: float = 1.0
-    primary: bool = False
-    evidence_refs: list[EvidenceRef] = Field(default_factory=list)
-
-
-class ManuscriptParadigm(BaseModel):
-    coarse_family: CoarseFamily | str = "mixed"
-    paradigm_labels: list[ParadigmLabel] = Field(default_factory=list)
-    rationale: str = ""
-
-
-def _make_fallback_paradigm() -> ManuscriptParadigm:
-    return ManuscriptParadigm(
-        coarse_family="unknown",
-        paradigm_labels=[],
-        rationale="Classification failed — reviewers instructed to apply criteria appropriate to the paper's apparent methodology.",
-    )
-
-
-FALLBACK_PARADIGM: ManuscriptParadigm
-
+# ---- evidence / findings -----------------------------------------------------
 
 class EvidenceRef(BaseModel):
     page: int | None = None
@@ -70,6 +77,7 @@ class Finding(BaseModel):
     )
     needs_external_verification: bool = False
     recommendation: str | None = None
+    origin: FindingOrigin = "original"
 
     @model_validator(mode="after")
     def _fill_issue_key(self) -> "Finding":
@@ -78,13 +86,43 @@ class Finding(BaseModel):
         return self
 
 
+# ---- paradigm ----------------------------------------------------------------
+
+class ParadigmLabel(BaseModel):
+    label: str
+    confidence: float = 1.0
+    primary: bool = False
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list)
+
+
+class ManuscriptParadigm(BaseModel):
+    coarse_family: CoarseFamily | str = "mixed"
+    paradigm_labels: list[ParadigmLabel] = Field(default_factory=list)
+    rationale: str = ""
+    schema_version: str = Field(default=SCHEMA_VERSION)
+
+
+def _make_fallback_paradigm() -> ManuscriptParadigm:
+    return ManuscriptParadigm(
+        coarse_family="unknown",
+        paradigm_labels=[],
+        rationale="Classification failed — reviewers instructed to apply criteria appropriate to the paper's apparent methodology.",
+    )
+
+
+FALLBACK_PARADIGM: ManuscriptParadigm
+
+
+# ---- reviews -----------------------------------------------------------------
+
 class AgentReview(BaseModel):
     agent_id: str
     kind: Literal["generalist", "specialist", "editor"]
     title: str
-    provider_profile: str
-    model: str
+    provider_profile: str = ""
+    model: str = ""
     review_source: ReviewSource = "unknown"
+    agent_host: AgentHost = "unknown"
     status: Literal["completed", "failed"] = "completed"
     summary: str = ""
     strengths: list[str] = Field(default_factory=list)
@@ -93,6 +131,7 @@ class AgentReview(BaseModel):
     findings: list[Finding] = Field(default_factory=list)
     markdown: str = ""
     error: str | None = None
+    schema_version: str = Field(default=SCHEMA_VERSION)
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -116,8 +155,8 @@ class Concern(BaseModel):
 class EditorReport(BaseModel):
     agent_id: str = "meta_editor"
     title: str = "Meta Review Editor"
-    provider_profile: str = "mock_local"
-    model: str = "mock-editor-v1"
+    provider_profile: str = ""
+    model: str = ""
     decision: DecisionValue = "major_revision"
     expected_subagent_reviews: int | None = None
     completed_subagent_reviews: int = 0
@@ -133,6 +172,7 @@ class EditorReport(BaseModel):
     markdown: str = ""
     status: Literal["completed", "failed"] = "completed"
     error: str | None = None
+    schema_version: str = Field(default=SCHEMA_VERSION)
 
 
 class AgentSummary(BaseModel):
@@ -145,59 +185,78 @@ class AgentSummary(BaseModel):
     artifact_json: str | None = None
 
 
-class FusionJobState(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+# ---- revision dual-track -----------------------------------------------------
 
-    id: UUID = Field(default_factory=uuid4)
+class PreviousConcern(BaseModel):
+    """A concern from the previous review round."""
+    id: str
+    issue_key: str
     title: str
-    source_name: str | None = None
-    source_pdf_name: str | None = None
-    run_label: str | None = None
-    document_type: DocumentType = "pdf"
-    mode: RuntimeMode = "backend"
-    status: JobStatus = JobStatus.queued
-    message: str = "Job queued."
-    error: str | None = None
-    created_at: datetime = Field(default_factory=utcnow)
-    updated_at: datetime = Field(default_factory=utcnow)
-    usage: UsageSnapshot = Field(default_factory=UsageSnapshot)
-    annotation_count: int = 0
-    final_report_ready: bool = False
-    pdf_ready: bool = False
-    artifacts: JobArtifacts = Field(default_factory=JobArtifacts)
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    agents: list[AgentSummary] = Field(default_factory=list)
-    concerns_count: int = 0
+    description: str = ""
+    severity: Severity = "medium"
+    status_from_previous: str | None = None
+
+
+class RevisionClaim(BaseModel):
+    """Author's claimed response to a previous concern."""
+    concern_id: str
+    claimed_change: str
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list)
+
+
+class RevisionAssessment(BaseModel):
+    """Per-concern assessment of revision quality."""
+    concern_id: str
+    status: RevisionStatus = "unclear"
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list)
+    rationale: str = ""
+    schema_version: str = Field(default=SCHEMA_VERSION)
+
+
+class RevisionResponseReview(BaseModel):
+    """Aggregate revision response review (host-agent-produced)."""
+    assessments: list[RevisionAssessment] = Field(default_factory=list)
+    summary: str = ""
+    quality_assessment: str = ""
+    markdown: str = ""
+    schema_version: str = Field(default=SCHEMA_VERSION)
+
+
+# ---- final summary -----------------------------------------------------------
+
+class FinalSummary(BaseModel):
+    run_id: str = ""
+    title: str = ""
+    source_name: str = ""
     decision: DecisionValue | None = None
-    provider_override: str | None = None
-    normalized_source_path: str | None = None
-    layout_fidelity: LayoutFidelity | None = None
+    concerns_count: int = 0
+    completed_reviews: int = 0
+    failed_reviews: int = 0
+    committee_mode: CommitteeMode = "draft_only"
+    editor_mode: EditorMode = "absent"
+    revision_mode: RevisionMode | None = None
+    editor_synthesis_present: bool = False
+    revision_response_present: bool = False
+    pdf_generated: bool | None = None
+    mineru_used: bool | None = None
+    libreoffice_used: bool | None = None
+    provenance_summary: dict[str, int] = Field(default_factory=dict)
+    artifact_contract_version: str = Field(default=ARTIFACT_CONTRACT_VERSION)
+    schema_version: str = Field(default=SCHEMA_VERSION)
+    layout_fidelity: str | None = None
     extractor_used: str | None = None
     conversion_used: str | None = None
     journal_context_present: bool = False
     journal_context_source: str | None = None
     mineru_attempted: bool | None = None
     mineru_succeeded: bool | None = None
-    manuscript_paradigm: ManuscriptParadigm | None = None
     revision_context_present: bool = False
     revision_context_source: str | None = None
     revision_extraction_quality: str | None = None
-
-    @model_validator(mode="after")
-    def _fill_source_name(self) -> "FusionJobState":
-        if not self.source_name and self.source_pdf_name:
-            self.source_name = self.source_pdf_name
-        if not self.source_pdf_name and self.source_name:
-            self.source_pdf_name = self.source_name
-        return self
+    reviewers: list[dict[str, Any]] = Field(default_factory=list)
 
 
-class JobResult(BaseModel):
-    job: FusionJobState
-    reviews: list[AgentReview] = Field(default_factory=list)
-    concerns: list[Concern] = Field(default_factory=list)
-    editor: EditorReport | None = None
-
+# ---- model rebuild -----------------------------------------------------------
 
 ManuscriptParadigm.model_rebuild()
 FALLBACK_PARADIGM = _make_fallback_paradigm()

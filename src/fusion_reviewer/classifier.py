@@ -5,7 +5,6 @@ from typing import Any
 
 from .config import ParadigmCriteriaConfig, get_settings
 from .models import FALLBACK_PARADIGM, EvidenceRef, ManuscriptParadigm, ParadigmLabel
-from .providers import BaseProvider
 
 
 def _build_taxonomy_table(criteria: ParadigmCriteriaConfig) -> str:
@@ -121,25 +120,32 @@ def parse_classification(
     )
 
 
-def classify_manuscript(
-    *,
-    provider: BaseProvider,
+def build_classifier_prompt(
     indexed_text: str,
-    page_index: dict[int, list[str]],
     criteria: ParadigmCriteriaConfig | None = None,
-) -> ManuscriptParadigm:
-    settings = get_settings()
+) -> str:
+    """Build the classifier prompt. The host agent calls the LLM with this prompt."""
     if criteria is None:
         from .config import load_paradigm_criteria
-
         criteria = load_paradigm_criteria()
+    return _build_classifier_prompt(indexed_text, criteria)
+
+
+def classify_manuscript_from_response(
+    response_text: str,
+    page_index: dict[int, list[str]],
+    *,
+    criteria: ParadigmCriteriaConfig | None = None,
+) -> ManuscriptParadigm:
+    """Parse LLM response into ManuscriptParadigm. Deterministic — no API call."""
+    settings = get_settings()
 
     try:
-        prompt = _build_classifier_prompt(indexed_text, criteria)
-        result = provider.generate(prompt=prompt)
-        paradigm = parse_classification(result.payload, page_index)
-    except Exception:
+        payload = json.loads(response_text)
+    except json.JSONDecodeError:
         return FALLBACK_PARADIGM
+
+    paradigm = parse_classification(payload, page_index)
 
     if not paradigm.paradigm_labels:
         return FALLBACK_PARADIGM

@@ -8,17 +8,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from deepreview.report.review_report_pdf import build_review_report_pdf
-from deepreview.report.source_annotations import build_source_annotations_for_export
-from deepreview.types import AnnotationItem
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
+from .artifact_writer import ensure_evidence_paths, write_json_atomic, write_text_atomic
 from .config import FusionSettings
 from .models import Concern, EvidenceRef
 from .normalization import NormalizationConfig, normalize_document
-from .storage import ensure_artifact_paths, write_json_atomic, write_text_atomic
 
 
 @dataclass
@@ -177,8 +174,12 @@ def seed_evidence_refs(page_index: dict[int, list[str]], *, limit: int = 6) -> l
     return refs
 
 
-def concerns_to_annotations(concerns: list[Concern]) -> list[AnnotationItem]:
-    annotations: list[AnnotationItem] = []
+def concerns_to_annotations(concerns: list[Concern]) -> list[Any]:
+    try:
+        from deepreview.types import AnnotationItem  # noqa: F811
+    except ImportError:
+        return []  # deepreview not available, skip annotation generation
+    annotations: list[Any] = []
     for concern in concerns:
         if not concern.evidence_refs:
             continue
@@ -220,11 +221,16 @@ def export_pdf_report(
     source_pdf_path: Path,
     final_markdown: str,
     content_list: list[dict[str, Any]] | None,
-    annotations: list[AnnotationItem],
+    annotations: list[Any],
     token_usage: dict[str, int],
     agent_model: str,
     report_pdf_path: Path,
 ) -> bool:
+    try:
+        from deepreview.report.review_report_pdf import build_review_report_pdf  # noqa: F811
+        from deepreview.report.source_annotations import build_source_annotations_for_export  # noqa: F811
+    except ImportError:
+        return False  # deepreview not available, skip PDF export
     if not source_pdf_path.exists() or source_pdf_path.suffix.lower() != ".pdf":
         return False
     try:

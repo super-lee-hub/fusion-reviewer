@@ -1,0 +1,268 @@
+{
+  "properties": {
+    "run_id": {
+      "default": "",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "title": {
+      "default": "",
+      "title": "Title",
+      "type": "string"
+    },
+    "source_name": {
+      "default": "",
+      "title": "Source Name",
+      "type": "string"
+    },
+    "decision": {
+      "anyOf": [
+        {
+          "enum": [
+            "accept",
+            "minor_revision",
+            "major_revision",
+            "reject"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decision"
+    },
+    "concerns_count": {
+      "default": 0,
+      "title": "Concerns Count",
+      "type": "integer"
+    },
+    "completed_reviews": {
+      "default": 0,
+      "title": "Completed Reviews",
+      "type": "integer"
+    },
+    "failed_reviews": {
+      "default": 0,
+      "title": "Failed Reviews",
+      "type": "integer"
+    },
+    "committee_mode": {
+      "default": "draft_only",
+      "enum": [
+        "draft_only",
+        "partial",
+        "full"
+      ],
+      "title": "Committee Mode",
+      "type": "string"
+    },
+    "editor_mode": {
+      "default": "absent",
+      "enum": [
+        "present",
+        "draft_only",
+        "absent"
+      ],
+      "title": "Editor Mode",
+      "type": "string"
+    },
+    "revision_mode": {
+      "anyOf": [
+        {
+          "enum": [
+            "none",
+            "reviewer_assessments_only",
+            "full_synthesis"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Revision Mode"
+    },
+    "editor_synthesis_present": {
+      "default": false,
+      "title": "Editor Synthesis Present",
+      "type": "boolean"
+    },
+    "revision_response_present": {
+      "default": false,
+      "title": "Revision Response Present",
+      "type": "boolean"
+    },
+    "pdf_generated": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pdf Generated"
+    },
+    "mineru_used": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mineru Used"
+    },
+    "libreoffice_used": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Libreoffice Used"
+    },
+    "provenance_summary": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Provenance Summary",
+      "type": "object"
+    },
+    "artifact_contract_version": {
+      "default": "1.0.0",
+      "title": "Artifact Contract Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "layout_fidelity": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Layout Fidelity"
+    },
+    "extractor_used": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Extractor Used"
+    },
+    "conversion_used": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Conversion Used"
+    },
+    "journal_context_present": {
+      "default": false,
+      "title": "Journal Context Present",
+      "type": "boolean"
+    },
+    "journal_context_source": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Journal Context Source"
+    },
+    "mineru_attempted": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mineru Attempted"
+    },
+    "mineru_succeeded": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mineru Succeeded"
+    },
+    "revision_context_present": {
+      "default": false,
+      "title": "Revision Context Present",
+      "type": "boolean"
+    },
+    "revision_context_source": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Revision Context Source"
+    },
+    "revision_extraction_quality": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Revision Extraction Quality"
+    },
+    "reviewers": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Reviewers",
+      "type": "array"
+    }
+  },
+  "title": "FinalSummary",
+  "type": "object"
+}

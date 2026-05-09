@@ -1,0 +1,6 @@
+# Claude Code project metadata for paper-review-committee skill
+# This file is optional — Claude Code consumes SKILL.md directly.
+name: paper-review-committee
+display_name: Paper Review Committee
+description: Committee-style academic paper review with 8 specialized reviewers
+version: "1.0.0"

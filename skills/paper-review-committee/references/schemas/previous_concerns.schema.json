@@ -1,0 +1,52 @@
+{
+  "description": "A concern from the previous review round.",
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "issue_key": {
+      "title": "Issue Key",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "severity": {
+      "default": "medium",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "status_from_previous": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Status From Previous"
+    }
+  },
+  "required": [
+    "id",
+    "issue_key",
+    "title"
+  ],
+  "title": "PreviousConcern",
+  "type": "object"
+}

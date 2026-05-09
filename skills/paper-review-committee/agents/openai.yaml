@@ -1,0 +1,8 @@
+interface:
+  display_name: "Paper Review Committee"
+  short_description: "Eight-agent committee paper review with editor synthesis"
+  default_prompt: "Use $paper-review-committee to review this paper with 8 independent reviewer subagents, inherit the current frontier/default model unless the user overrides it, use high reasoning for reviewer work when available, classify the manuscript paradigm first, and synthesize the final editor report."
+  brand_color: "#0F766E"
+
+policy:
+  allow_implicit_invocation: true

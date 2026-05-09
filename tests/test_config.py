@@ -1,31 +1,18 @@
-from fusion_reviewer.config import load_provider_profiles, load_review_plan
-from fusion_reviewer.providers import ProviderRegistry
+from fusion_reviewer.config import get_settings, load_paradigm_criteria, load_roles
 
 
-def test_provider_profiles_load():
-    profiles = load_provider_profiles()
-    assert "mock_local" in profiles
-    assert profiles["mock_local"].enabled is True
+def test_settings_load():
+    settings = get_settings()
+    assert settings.data_dir is not None
+    assert settings.max_evidence_chars > 0
 
 
-def test_review_plan_contains_expected_slots():
-    plan = load_review_plan()
-    assert len(plan.generalists) == 3
-    assert len(plan.specialists) == 5
-    assert plan.editor.id == "meta_editor"
+def test_paradigm_criteria_loads():
+    criteria = load_paradigm_criteria()
+    assert hasattr(criteria, 'paradigms')
+    assert hasattr(criteria, 'fallback_focus')
 
 
-def test_openai_compatible_health_messages(monkeypatch):
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.delenv("AIHUBMIX_API_KEY", raising=False)
-    monkeypatch.delenv("AIHUBMIX_BASE_URL", raising=False)
-
-    registry = ProviderRegistry()
-
-    openai_health = registry.build("openai_default").health()
-    aihubmix_health = registry.build("aihubmix").health()
-
-    assert openai_health["ok"] is False
-    assert openai_health["message"] == "missing api key"
-    assert aihubmix_health["ok"] is False
-    assert aihubmix_health["message"] == "missing api key and base url"
+def test_roles_loads():
+    roles = load_roles()
+    assert hasattr(roles, 'generalists')
