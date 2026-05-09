@@ -2,9 +2,9 @@ mode_defaults:
   codex:
     description: "Codex 拉起 8 个 subagent，主对话作为 editor。"
     writer: "root_conversation"
-  backend:
-    description: "本地 fusion-reviewer service 通过 provider profiles 跑同一套角色 schema。"
-    writer: "service_editor"
+  local:
+    description: "Host agent 本地串行执行同一套角色 schema。"
+    writer: "local_editor"
 
 evidence_rules:
   - "论文只预处理一次，然后把同一份 evidence bundle 共享给所有 reviewer。"

@@ -53,11 +53,6 @@
       "title": "Completed Local Reviews",
       "type": "integer"
     },
-    "completed_service_reviews": {
-      "default": 0,
-      "title": "Completed Service Reviews",
-      "type": "integer"
-    },
     "completed_unknown_source_reviews": {
       "default": 0,
       "title": "Completed Unknown Source Reviews",

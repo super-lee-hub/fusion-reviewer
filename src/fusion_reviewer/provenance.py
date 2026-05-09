@@ -29,6 +29,8 @@ def map_legacy_provenance(
         mapped_source = review_source
     elif review_source == "service":
         mapped_source = "unknown"
+    elif review_source == "unknown":
+        mapped_source = "unknown"
     elif review_source and review_source.strip():
         mapped_source = "unknown"
     else:
@@ -42,16 +44,22 @@ def map_legacy_provenance(
 
 
 def infer_review_source(review: AgentReview) -> str:
+    """Infer review source from review_source field or provider_profile metadata.
+
+    Never returns ``"service"`` — the hard skill-only taxonomy only allows:
+    ``subagent``, ``serial_local``, ``local``, ``unknown``.
+    """
     token = slugify(getattr(review, "review_source", "unknown"))
-    if token in {"subagent", "local", "service"}:
+    if token in {"subagent", "serial_local", "local"}:
         return token
     profile = slugify(getattr(review, "provider_profile", ""))
     if "subagent" in profile:
         return "subagent"
+    if any(marker in profile for marker in ("serial_local", "serial")):
+        return "serial_local"
     if any(marker in profile for marker in ("local", "repair", "root", "committee", "skill")):
         return "local"
-    if profile:
-        return "service"
+    # provider_profile is metadata only — do NOT infer service from it
     return "unknown"
 
 
@@ -68,15 +76,15 @@ def summarize_review_sources(
     expected_subagent_reviews: int | None = None,
 ) -> dict[str, int | bool | None]:
     completed = [with_inferred_review_source(item) for item in reviews if item.status == "completed"]
-    counts: dict[str, int] = {"subagent": 0, "local": 0, "service": 0, "unknown": 0}
+    counts: dict[str, int] = {"subagent": 0, "serial_local": 0, "local": 0, "unknown": 0}
     for review in completed:
         counts[review.review_source] = counts.get(review.review_source, 0) + 1
     missing = max((expected_subagent_reviews or 0) - counts["subagent"], 0) if expected_subagent_reviews is not None else 0
     return {
         "expected_subagent_reviews": expected_subagent_reviews,
         "completed_subagent_reviews": counts["subagent"],
+        "completed_serial_local_reviews": counts["serial_local"],
         "completed_local_reviews": counts["local"],
-        "completed_service_reviews": counts["service"],
         "completed_unknown_source_reviews": counts["unknown"],
         "missing_subagent_slots": missing,
         "full_subagent_committee": None if expected_subagent_reviews is None else missing == 0,

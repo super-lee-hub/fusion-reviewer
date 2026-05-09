@@ -59,11 +59,10 @@
       "type": "string"
     },
     "editor_mode": {
-      "default": "absent",
+      "default": "draft_no_editor_synthesis",
       "enum": [
-        "present",
-        "draft_only",
-        "absent"
+        "host_produced",
+        "draft_no_editor_synthesis"
       ],
       "title": "Editor Mode",
       "type": "string"
@@ -73,6 +72,7 @@
         {
           "enum": [
             "none",
+            "materials_only",
             "reviewer_assessments_only",
             "full_synthesis"
           ],
@@ -136,6 +136,18 @@
         "type": "integer"
       },
       "title": "Provenance Summary",
+      "type": "object"
+    },
+    "evidence_validation_summary": {
+      "additionalProperties": true,
+      "title": "Evidence Validation Summary",
+      "type": "object"
+    },
+    "optional_capabilities": {
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "title": "Optional Capabilities",
       "type": "object"
     },
     "artifact_contract_version": {

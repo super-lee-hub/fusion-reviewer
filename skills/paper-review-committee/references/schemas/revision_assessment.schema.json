@@ -72,10 +72,10 @@
       "type": "object"
     }
   },
-  "description": "Per-concern assessment of revision quality.",
+  "description": "Per-concern assessment of revision quality (dual-track: response letter + manuscript evidence).",
   "properties": {
-    "concern_id": {
-      "title": "Concern Id",
+    "previous_concern_id": {
+      "title": "Previous Concern Id",
       "type": "string"
     },
     "status": {
@@ -89,16 +89,33 @@
       "title": "Status",
       "type": "string"
     },
-    "evidence_refs": {
+    "assessment": {
+      "default": "",
+      "title": "Assessment",
+      "type": "string"
+    },
+    "response_letter_refs": {
       "items": {
         "$ref": "#/$defs/EvidenceRef"
       },
-      "title": "Evidence Refs",
+      "title": "Response Letter Refs",
       "type": "array"
     },
-    "rationale": {
-      "default": "",
-      "title": "Rationale",
+    "manuscript_evidence_refs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "title": "Manuscript Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "default": "medium",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Confidence",
       "type": "string"
     },
     "schema_version": {
@@ -108,7 +125,7 @@
     }
   },
   "required": [
-    "concern_id"
+    "previous_concern_id"
   ],
   "title": "RevisionAssessment",
   "type": "object"

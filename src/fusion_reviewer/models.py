@@ -14,23 +14,6 @@ def utcnow() -> datetime:
 
 # ---- local types (replaces deepreview.types imports) -------------------------
 
-class JobStatus(str, Enum):
-    queued = "queued"
-    pdf_parsing = "pdf_parsing"
-    agent_running = "agent_running"
-    final_report_persisting = "final_report_persisting"
-    pdf_exporting = "pdf_exporting"
-    completed = "completed"
-    failed = "failed"
-
-
-class UsageSnapshot(BaseModel):
-    requests: int = 0
-    input_tokens: int = 0
-    output_tokens: int = 0
-    total_tokens: int = 0
-
-
 # ---- shared literals ---------------------------------------------------------
 
 Severity = Literal["low", "medium", "high", "critical"]
@@ -42,8 +25,8 @@ ReviewSource = Literal["subagent", "serial_local", "local", "unknown"]
 AgentHost = Literal["codex", "claude_code", "other", "unknown"]
 CoarseFamily = Literal["empirical", "theoretical", "mixed", "review_synthesis"]
 CommitteeMode = Literal["draft_only", "partial", "full"]
-EditorMode = Literal["present", "draft_only", "absent"]
-RevisionMode = Literal["none", "reviewer_assessments_only", "full_synthesis"]
+EditorMode = Literal["host_produced", "draft_no_editor_synthesis"]
+RevisionMode = Literal["none", "materials_only", "reviewer_assessments_only", "full_synthesis"]
 RevisionStatus = Literal["addressed", "partially_addressed", "not_addressed", "unclear"]
 FindingOrigin = Literal["original", "new_after_revision"]
 
@@ -116,12 +99,14 @@ FALLBACK_PARADIGM: ManuscriptParadigm
 # ---- reviews -----------------------------------------------------------------
 
 class AgentReview(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     agent_id: str
     kind: Literal["generalist", "specialist", "editor"]
     title: str
     provider_profile: str = ""
     model: str = ""
-    review_source: ReviewSource = "unknown"
+    review_source: ReviewSource = Field(default="unknown", validation_alias=AliasChoices("review_source"))
     agent_host: AgentHost = "unknown"
     status: Literal["completed", "failed"] = "completed"
     summary: str = ""
@@ -133,6 +118,16 @@ class AgentReview(BaseModel):
     error: str | None = None
     schema_version: str = Field(default=SCHEMA_VERSION)
     created_at: datetime = Field(default_factory=utcnow)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_legacy_review_source(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        raw = data.get("review_source")
+        if raw == "service":
+            data = {**data, "review_source": "unknown"}
+        return data
 
 
 class Concern(BaseModel):
@@ -161,7 +156,6 @@ class EditorReport(BaseModel):
     expected_subagent_reviews: int | None = None
     completed_subagent_reviews: int = 0
     completed_local_reviews: int = 0
-    completed_service_reviews: int = 0
     completed_unknown_source_reviews: int = 0
     missing_subagent_slots: int = 0
     full_subagent_committee: bool | None = None
@@ -205,11 +199,18 @@ class RevisionClaim(BaseModel):
 
 
 class RevisionAssessment(BaseModel):
-    """Per-concern assessment of revision quality."""
-    concern_id: str
+    """Per-concern assessment of revision quality (dual-track: response letter + manuscript evidence)."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    previous_concern_id: str = Field(validation_alias=AliasChoices("previous_concern_id", "concern_id"))
     status: RevisionStatus = "unclear"
-    evidence_refs: list[EvidenceRef] = Field(default_factory=list)
-    rationale: str = ""
+    assessment: str = Field(default="", validation_alias=AliasChoices("assessment", "rationale"))
+    response_letter_refs: list[EvidenceRef] = Field(default_factory=list)
+    manuscript_evidence_refs: list[EvidenceRef] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("manuscript_evidence_refs", "evidence_refs"),
+    )
+    confidence: Literal["high", "medium", "low"] = "medium"
     schema_version: str = Field(default=SCHEMA_VERSION)
 
 
@@ -233,7 +234,7 @@ class FinalSummary(BaseModel):
     completed_reviews: int = 0
     failed_reviews: int = 0
     committee_mode: CommitteeMode = "draft_only"
-    editor_mode: EditorMode = "absent"
+    editor_mode: EditorMode = "draft_no_editor_synthesis"
     revision_mode: RevisionMode | None = None
     editor_synthesis_present: bool = False
     revision_response_present: bool = False
@@ -241,6 +242,8 @@ class FinalSummary(BaseModel):
     mineru_used: bool | None = None
     libreoffice_used: bool | None = None
     provenance_summary: dict[str, int] = Field(default_factory=dict)
+    evidence_validation_summary: dict[str, Any] = Field(default_factory=dict)
+    optional_capabilities: dict[str, bool] = Field(default_factory=dict)
     artifact_contract_version: str = Field(default=ARTIFACT_CONTRACT_VERSION)
     schema_version: str = Field(default=SCHEMA_VERSION)
     layout_fidelity: str | None = None

@@ -57,8 +57,8 @@ def kind_label(value: str) -> str:
 def review_source_label(value: str) -> str:
     return {
         "subagent": "真实子代理",
+        "serial_local": "串行本地",
         "local": "主线程本地",
-        "service": "后端服务",
         "unknown": "未标注来源",
     }.get(value, value)
 
@@ -120,7 +120,6 @@ def render_editor_markdown(editor: EditorReport) -> str:
                 f"- 预期真实 subagent reviewer：`{editor.expected_subagent_reviews}`",
                 f"- 已完成真实 subagent reviewer：`{editor.completed_subagent_reviews}`",
                 f"- 主线程本地补写 reviewer：`{editor.completed_local_reviews}`",
-                f"- 后端服务 reviewer：`{editor.completed_service_reviews}`",
                 f"- 未标注来源 reviewer：`{editor.completed_unknown_source_reviews}`",
                 f"- 缺失 subagent 槽位：`{editor.missing_subagent_slots}`",
                 "",
@@ -185,7 +184,6 @@ def build_final_report(
                 f"- 预期真实 subagent reviewer：`{source_audit['expected_subagent_reviews']}`",
                 f"- 已完成真实 subagent reviewer：`{source_audit['completed_subagent_reviews']}`",
                 f"- 主线程本地补写 reviewer：`{source_audit['completed_local_reviews']}`",
-                f"- 后端服务 reviewer：`{source_audit['completed_service_reviews']}`",
                 f"- 未标注来源 reviewer：`{source_audit['completed_unknown_source_reviews']}`",
                 f"- 缺失 subagent 槽位：`{source_audit['missing_subagent_slots']}`",
             ]
@@ -195,7 +193,6 @@ def build_final_report(
     else:
         lines.extend(
             [
-                f"- 后端服务 reviewer：`{source_audit['completed_service_reviews']}`",
                 f"- 真实 subagent reviewer：`{source_audit['completed_subagent_reviews']}`",
                 f"- 主线程本地 reviewer：`{source_audit['completed_local_reviews']}`",
                 f"- 未标注来源 reviewer：`{source_audit['completed_unknown_source_reviews']}`",

@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import re
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+from pydantic import BaseModel, Field
 
 from .models import EvidenceRef, Finding
+
+if TYPE_CHECKING:
+    from .models import AgentReview, RevisionAssessment
 
 QuoteMatchType = Literal["exact", "normalized", "page_line_only", "not_found"]
 
@@ -116,16 +121,111 @@ def verify_evidence_refs(
     return results
 
 
+class EvidenceValidationSummary(BaseModel):
+    """Per-reviewer summary of evidence validation results."""
+    total_refs: int = 0
+    exact_matches: int = 0
+    normalized_matches: int = 0
+    page_line_only: int = 0
+    not_found: int = 0
+    invalid_rate: float = 0.0
+    evidence_unreliable: bool = False
+    downgraded_findings: list[str] = Field(default_factory=list)
+    excluded_findings: list[str] = Field(default_factory=list)
+
+
+def validate_review_evidence(
+    review: AgentReview,
+    page_index: dict[int, list[str]],
+) -> tuple[AgentReview, EvidenceValidationSummary]:
+    """Validate all evidence refs in a review's findings against the page_index.
+
+    Applies downgrade/exclusion rules:
+    - exact/normalized: valid, enters concern merge
+    - page_line_only: retained but weak; critical severity downgraded to high
+    - not_found: excluded from concern merge, written to diagnostics
+
+    Returns (filtered_review, validation_summary).
+    """
+    summary = EvidenceValidationSummary()
+    valid_findings: list[Finding] = []
+
+    for finding in review.findings:
+        ref_results = []
+        for ref in finding.evidence_refs:
+            summary.total_refs += 1
+            match_type = verify_quote(
+                ref.quote, page_index, ref.page, ref.start_line, ref.end_line
+            )
+            ref_results.append(match_type)
+            if match_type == "exact":
+                summary.exact_matches += 1
+            elif match_type == "normalized":
+                summary.normalized_matches += 1
+            elif match_type == "page_line_only":
+                summary.page_line_only += 1
+            else:
+                summary.not_found += 1
+
+        # Determine finding disposition
+        all_not_found = all(m == "not_found" for m in ref_results) if ref_results else True
+
+        if all_not_found and finding.evidence_refs:
+            # Finding has evidence refs but none found — exclude from merge
+            summary.excluded_findings.append(finding.id)
+            continue
+
+        if any(m == "page_line_only" for m in ref_results):
+            # Downgrade critical to high
+            if finding.severity == "critical":
+                finding = finding.model_copy(update={"severity": "high"})
+                summary.downgraded_findings.append(finding.id)
+
+        valid_findings.append(finding)
+
+    # Compute invalid rate and unreliable flag
+    if summary.total_refs > 0:
+        summary.invalid_rate = summary.not_found / summary.total_refs
+    if summary.invalid_rate >= 0.5 and len(review.findings) >= 2:
+        summary.evidence_unreliable = True
+
+    filtered_review = review.model_copy(update={"findings": valid_findings})
+    return filtered_review, summary
+
+
 def validate_revision_assessment_evidence(
-    status: str,
-    evidence_refs: list[EvidenceRef],
+    assessment: "RevisionAssessment",
+    page_index: dict[int, list[str]] | None = None,
 ) -> tuple[bool, str]:
-    """Check that an 'addressed' revision assessment has manuscript evidence.
+    """Check that an 'addressed' revision assessment has valid manuscript evidence.
+
+    For ``status=addressed``, at least one ``manuscript_evidence_refs[]`` must have
+    an exact or normalized match in the revised manuscript's page_index.
 
     Returns (is_valid, downgraded_status_or_reason).
     """
-    if status == "addressed":
-        valid_refs = [r for r in evidence_refs if r.quote or r.page is not None]
-        if not valid_refs:
+    if assessment.status == "addressed":
+        refs = assessment.manuscript_evidence_refs
+        if not refs:
             return False, "partially_addressed"
+        if page_index is not None:
+            has_valid = False
+            for ref in refs:
+                match_type = verify_quote(
+                    ref.quote, page_index, ref.page, ref.start_line, ref.end_line
+                )
+                if match_type in ("exact", "normalized"):
+                    has_valid = True
+                    break
+            if not has_valid:
+                # Check if any page/line ref exists but quote doesn't match
+                has_page_ref = any(r.page is not None for r in refs)
+                if has_page_ref:
+                    return False, "partially_addressed"
+                return False, "unclear"
+        else:
+            # Without page_index, at least require non-empty refs
+            valid_refs = [r for r in refs if r.quote or r.page is not None]
+            if not valid_refs:
+                return False, "partially_addressed"
     return True, ""

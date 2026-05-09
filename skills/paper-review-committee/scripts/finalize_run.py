@@ -47,7 +47,10 @@ from fusion_reviewer.models import (  # noqa: E402
     RevisionAssessment,
     RevisionResponseReview,
 )
-from fusion_reviewer.quote_verifier import validate_revision_assessment_evidence  # noqa: E402
+from fusion_reviewer.quote_verifier import (  # noqa: E402
+    validate_review_evidence,
+    validate_revision_assessment_evidence,
+)
 from fusion_reviewer.reports import build_final_report, build_final_summary  # noqa: E402
 from fusion_reviewer.schema_validator import (  # noqa: E402
     validate_editor_output,
@@ -109,8 +112,30 @@ def main(argv: list[str] | None = None) -> int:
     committee_mode = _determine_committee_mode(len(completed_reviews))
     print(f"Committee mode: {committee_mode} ({len(completed_reviews)} completed reviewers)", file=sys.stderr)
 
-    # Merge concerns
-    concerns = merge_concerns(completed_reviews)
+    # Load page index for evidence verification
+    page_index_path = run_dir / "evidence" / "page_index.json"
+    page_index: dict = {}
+    if page_index_path.exists():
+        try:
+            page_index = json.loads(page_index_path.read_text(encoding="utf-8"))
+            # Convert string keys (from JSON) to int keys
+            page_index = {int(k): v for k, v in page_index.items()}
+        except Exception:
+            pass
+
+    # Phase 1: Evidence validation for reviewer findings (before concern merge)
+    evidence_validation_results: dict[str, dict] = {}
+    validated_reviews: list[AgentReview] = []
+    for review in completed_reviews:
+        if page_index:
+            filtered_review, ev_summary = validate_review_evidence(review, page_index)
+            validated_reviews.append(filtered_review)
+            evidence_validation_results[review.agent_id] = ev_summary.model_dump()
+        else:
+            validated_reviews.append(review)
+
+    # Merge concerns (only from validated findings)
+    concerns = merge_concerns(validated_reviews)
     print(f"Merged concerns: {len(concerns)}", file=sys.stderr)
 
     # Load or draft editor synthesis
@@ -147,27 +172,24 @@ def main(argv: list[str] | None = None) -> int:
             revision_response_review = RevisionResponseReview.model_validate(rr_data)
             revision_response_present = True
 
-    # Load page index for evidence verification
-    page_index_path = run_dir / "evidence" / "page_index.json"
-    page_index: dict = {}
-    if page_index_path.exists():
-        try:
-            page_index = json.loads(page_index_path.read_text(encoding="utf-8"))
-            # Convert string keys (from JSON) to int keys
-            page_index = {int(k): v for k, v in page_index.items()}
-        except Exception:
-            pass
-
-    # Validate revision assessments
+    # Phase 2: Validate revision assessments against revised manuscript page_index
     diagnostics: list[str] = []
     tolerant_issues: list[str] = []
     if revision_response_review:
+        revised_page_index_path = run_dir / "original" / "page_index.json"
+        revised_page_index: dict = {}
+        if revised_page_index_path.exists():
+            try:
+                revised_page_index = json.loads(revised_page_index_path.read_text(encoding="utf-8"))
+                revised_page_index = {int(k): v for k, v in revised_page_index.items()}
+            except Exception:
+                pass
         for assessment in revision_response_review.assessments:
             valid, downgraded = validate_revision_assessment_evidence(
-                assessment.status, assessment.evidence_refs
+                assessment, revised_page_index or page_index
             )
             if not valid:
-                msg = f"Revision assessment {assessment.concern_id}: status 'addressed' downgraded to '{downgraded}' — no manuscript evidence ref"
+                msg = f"Revision assessment {assessment.previous_concern_id}: status 'addressed' downgraded to '{downgraded}' — no valid manuscript evidence"
                 if args.strict:
                     print(f"error: {msg}", file=sys.stderr)
                     return 1
@@ -218,6 +240,14 @@ def main(argv: list[str] | None = None) -> int:
         },
     )
 
+    # Determine revision_mode
+    if revision_response_present:
+        revision_mode = "full_synthesis"
+    elif run_manifest.get("revision_present"):
+        revision_mode = "materials_only"
+    else:
+        revision_mode = "none"
+
     # Add final summary fields
     final_summary_obj = FinalSummary(
         run_id=run_dir.name,
@@ -228,14 +258,21 @@ def main(argv: list[str] | None = None) -> int:
         completed_reviews=len(completed_reviews),
         failed_reviews=len(reviews) - len(completed_reviews),
         committee_mode=committee_mode,
-        editor_mode="present" if editor_synthesis_present else "draft_only",
-        revision_mode="full_synthesis" if revision_response_present else ("none" if not run_manifest.get("revision_present") else "reviewer_assessments_only"),
+        editor_mode="host_produced" if editor_synthesis_present else "draft_no_editor_synthesis",
+        revision_mode=revision_mode,
         editor_synthesis_present=editor_synthesis_present,
         revision_response_present=revision_response_present,
         provenance_summary={
             "subagent": sum(1 for r in reviews if r.review_source == "subagent"),
+            "serial_local": sum(1 for r in reviews if r.review_source == "serial_local"),
             "local": sum(1 for r in reviews if r.review_source == "local"),
             "unknown": sum(1 for r in reviews if r.review_source == "unknown"),
+        },
+        evidence_validation_summary={
+            reviewer_id: summary for reviewer_id, summary in evidence_validation_results.items()
+        },
+        optional_capabilities={
+            "pdf": False,
         },
         layout_fidelity=final_summary.get("layout_fidelity"),
         extractor_used=final_summary.get("extractor_used"),
@@ -271,8 +308,6 @@ def main(argv: list[str] | None = None) -> int:
             write_text_atomic(run_dir / "revision_response_review.md", revision_response_review.markdown)
 
     # Write diagnostics
-    import json as _json
-    from fusion_reviewer.artifact_writer import write_json_atomic
     write_json_atomic(
         run_dir / "evidence" / "finalize_diagnostics.json",
         {
@@ -280,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
             "committee_mode": committee_mode,
             "editor_synthesis_present": editor_synthesis_present,
             "schema_validation": {"reviewers_loaded": len(reviews), "completed": len(completed_reviews)},
+            "evidence_validation": evidence_validation_results,
         },
     )
 
@@ -294,7 +330,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Finalized: {run_dir}", file=sys.stderr)
     print(f"  final_report.md, meta_review.md, concerns_table.csv, final_summary.json", file=sys.stderr)
     print(f"  committee mode: {committee_mode}", file=sys.stderr)
-    print(f"  editor synthesis: {'present' if editor_synthesis_present else 'draft_only'}", file=sys.stderr)
+    print(f"  editor mode: {'host_produced' if editor_synthesis_present else 'draft_no_editor_synthesis'}", file=sys.stderr)
     if tolerant_issues:
         print(f"  tolerant issues: {len(tolerant_issues)}", file=sys.stderr)
         for issue in tolerant_issues:

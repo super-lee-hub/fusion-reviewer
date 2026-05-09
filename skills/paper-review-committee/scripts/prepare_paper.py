@@ -117,8 +117,9 @@ def main(argv: list[str] | None = None) -> int:
 
     # Normalize document
     print("Normalizing document...", file=sys.stderr)
+    normalize_cache_root = output_root / "_normalize_cache"
     try:
-        evidence = normalize_document(paper_path)
+        evidence = normalize_document(paper_path, output_root=normalize_cache_root)
     except Exception as exc:
         print(f"error: document normalization failed: {exc}", file=sys.stderr)
         return 3
@@ -197,7 +198,7 @@ def main(argv: list[str] | None = None) -> int:
             orig_dir = paths["original_dir"]
             _copy_file_to(orig_path, orig_dir, f"source_copy{orig_path.suffix}")
             try:
-                orig_evidence = normalize_document(orig_path)
+                orig_evidence = normalize_document(orig_path, output_root=normalize_cache_root)
                 write_text_atomic(orig_dir / "normalized.md", orig_evidence.markdown or "")
                 if hasattr(orig_evidence, "page_index") and orig_evidence.page_index:
                     write_json_atomic(orig_dir / "page_index.json", orig_evidence.page_index)
@@ -210,6 +211,9 @@ def main(argv: list[str] | None = None) -> int:
     manifest = {
         "run_id": run_id,
         "paper_path": str(paper_path),
+        "artifact_contract_version": "1.0.0",
+        "schema_version": "1.0.0",
+        "normalization_cache_root": str(normalize_cache_root),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "journal_present": bool(journal_parts),
         "revision_present": bool(args.revision_file),

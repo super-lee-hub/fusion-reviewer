@@ -36,6 +36,14 @@ data/
 # OMX/OMC internal state
 .omc/
 
+# Codex / Claude local state
+.codex/
+.claude/settings.local.json
+.claude/logs/
+.claude/cache/
+
+# Do not ignore .claude/skills/ globally if project skills are intentionally committed
+
 # System files
 .DS_Store
 Thumbs.db
