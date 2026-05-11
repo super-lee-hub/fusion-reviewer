@@ -1,5 +1,7 @@
 # paper-review-committee / fusion-reviewer
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/super-lee-hub/fusion-reviewer)
+
 Platform-neutral Agent Skill for committee-style academic paper review — the host agent does reasoning, reviewer/editor/revision judgment; the deterministic core library does evidence preparation, schema validation, quote verification, concern merge, and artifact rendering.
 
 ## What it is
@@ -185,3 +187,13 @@ All of these are already covered by `.gitignore`.
 python -m pytest
 python scripts/generate_schemas.py
 ```
+
+## Acknowledgements
+
+`fusion-reviewer` was designed and implemented with reference to several open-source paper-review projects:
+
+- **AI Reviewer** (`ai-reviewer`, Jukka Sihvonen) for the multiagent reviewer/editor decomposition used in scholarly peer review.
+- [ResearAI/DeepReviewer-v2](https://github.com/ResearAI/DeepReviewer-v2) for PDF-to-evidence preparation, MinerU-based parsing, tool-grounded review flow, and final-report export ideas.
+- [poldrack/ai-peer-review](https://github.com/poldrack/ai-peer-review) for multi-model peer review, meta-review synthesis, and concerns-table artifact patterns.
+
+This repository is an independent implementation focused on a platform-neutral Agent Skill plus a deterministic core library.
